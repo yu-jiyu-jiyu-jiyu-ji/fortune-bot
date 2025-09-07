@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>占い登録フォーム</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>占い登録フォーム</h1>
+    <form action="/submit" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+
+      <div class="form-group">
+        <label for="name">お名前</label>
+        <input type="text" name="name" id="name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="birthday">生年月日</label>
+        <input type="date" name="birthday" id="birthday" required>
+      </div>
+
+      <div class="form-group">
+        <label for="left_hand">左手の写真（任意）</label>
+        <input type="file" name="left_hand" id="left_hand" accept="image/*">
+      </div>
+
+      <div class="form-group">
+        <label for="right_hand">右手の写真（任意）</label>
+        <input type="file" name="right_hand" id="right_hand" accept="image/*">
+      </div>
+
+      <button type="submit">登録する</button>
+    </form>
+  </div>
+</body>
+</html>
