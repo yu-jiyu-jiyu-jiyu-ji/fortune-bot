@@ -83,4 +83,6 @@ def home():
     return "Fortune bot system is running."
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Renderが指定するポート番号に対応
+    app.run(host="0.0.0.0", port=port, debug=True)
+
