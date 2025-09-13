@@ -21,6 +21,11 @@ def callback():
 
     return "OK"
 
+@app.route("/thanks")
+def thanks():
+    return render_template("thanks.html")
+    # return "登録ありがとうございました！（暫定）"
+
 # ユーザー登録フォームの表示
 @app.route("/register")
 def register():
@@ -32,11 +37,6 @@ def register():
 def submit():
     return submit_user_info()
     # return submit_user_info(request)
-
-@app.route("/thanks")
-def thanks():
-    return render_template("thanks.html")
-    # return "登録ありがとうございました！（暫定）"
 
 # ヘルスチェック用ルート
 @app.route("/")
