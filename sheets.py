@@ -12,4 +12,4 @@ def get_credentials():
 
 # 取得して使用
 gc = gspread.authorize(get_credentials())
-sheet = gc.open_by_key("あなたのスプレッドシートID").sheet1
+sheet = gc.open_by_key("SPREADSHEET_ID").sheet1
