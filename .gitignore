@@ -1,0 +1,10 @@
+# 環境変数・機密情報
+.env
+*.json
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+
+# VSCodeの設定ファイル（任意）
+.vscode/
