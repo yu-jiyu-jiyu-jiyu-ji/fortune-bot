@@ -13,7 +13,7 @@ def get_credentials():
 # スプレッドシートへ接続
 gc = gspread.authorize(get_credentials())
 sheet_id = os.environ["SPREADSHEET_ID"]
-sheet = gc.open_by_key(sheet_id).sheet1
+sheet = gc.open_by_key(sheet_id).User
 
 # 🔽 これを追加！
 def append_user_data(user_data: dict):
