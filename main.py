@@ -30,12 +30,13 @@ def register():
 # フォーム送信処理
 @app.route("/submit", methods=["POST"])
 def submit():
-    return submit_user_info(request)
+    return submit_user_info()
+    # return submit_user_info(request)
 
 @app.route("/thanks")
 def thanks():
-    # return render_template("thanks.html")
-    return "登録ありがとうございました！（暫定）"
+    return render_template("thanks.html")
+    # return "登録ありがとうございました！（暫定）"
 
 # ヘルスチェック用ルート
 @app.route("/")
