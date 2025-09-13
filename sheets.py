@@ -12,4 +12,5 @@ def get_credentials():
 
 # 取得して使用
 gc = gspread.authorize(get_credentials())
-sheet = gc.open_by_key("SPREADSHEET_ID").sheet1
+    sheet_id = os.environ["SPREADSHEET_ID"] 
+    sheet = gc.open_by_key(sheet_id).sheet1
