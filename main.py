@@ -35,8 +35,8 @@ def register():
 # フォーム送信処理
 @app.route("/submit", methods=["POST"])
 def submit():
-    return submit_user_info()
-    # return submit_user_info(request)
+    return handle_form_submission()  # ← 直接実行する（wrap関数を介さない）
+
 
 # ヘルスチェック用ルート
 @app.route("/")
