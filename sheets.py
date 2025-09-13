@@ -10,7 +10,17 @@ def get_credentials():
     credentials_dict = json.loads(base64.b64decode(encoded).decode())
     return ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
 
-# 取得して使用
+# スプレッドシートへ接続
 gc = gspread.authorize(get_credentials())
 sheet_id = os.environ["SPREADSHEET_ID"]
 sheet = gc.open_by_key(sheet_id).sheet1
+
+# 🔽 これを追加！
+def append_user_data(user_data: dict):
+    """
+    ユーザーデータ（辞書）をスプレッドシートに追記する
+    """
+    # ヘッダー行の順に並べる
+    headers = sheet.row_values(1)
+    row = [user_data.get(key, "") for key in headers]
+    sheet.append_row(row)
