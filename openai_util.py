@@ -39,3 +39,4 @@ def generate_fortune(name, birthday):
     except Exception as e:
         print(f"OpenAI API Error: {e}")
         return "エラーが発生しました。もう一度お試しください。"
+    

@@ -34,7 +34,8 @@ def submit():
 
 @app.route("/thanks")
 def thanks():
-    return render_template("thanks.html")
+    # return render_template("thanks.html")
+    return "登録ありがとうございました！（暫定）"
 
 # ヘルスチェック用ルート
 @app.route("/")
