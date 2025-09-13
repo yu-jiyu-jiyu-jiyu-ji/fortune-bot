@@ -31,10 +31,10 @@ def register():
 @app.route("/submit", methods=["POST"])
 def submit():
     return submit_user_info(request)
-    
+
 @app.route("/thanks")
 def thanks():
-    return "登録ありがとうございました！"
+    return render_template("thanks.html")
 
 # ヘルスチェック用ルート
 @app.route("/")
