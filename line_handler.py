@@ -18,18 +18,37 @@ def handle_message(event):
     if message_text in ["こんにちは", "はじめまして"]:
         register_url = f"https://fortune-bot-p2ey.onrender.com/register?uid={user_id}"
         reply = f"{user_id}さん、初めまして！\nまずはこちらから登録をお願いします👇\n{register_url}"
+
     elif message_text == "今日の運勢":
-        from openai_util import get_fortune_result
-        from sheets import can_ask_fortune_today
+        from sheets import get_user_info, update_last_fortune_timestamp
+        from openai_util import generate_fortune
 
-        if can_ask_fortune_today(user_id):
-            fortune = get_fortune_result(user_id)
-            reply = f"{user_id}さんの今日の運勢は…\n\n{fortune}"
-        else:
-            reply = "本日はすでに運勢をお届け済みです！明日またお試しください🌟"
+        try:
+            # スプレッドシートからユーザー情報取得
+            user_info = get_user_info(user_id)
+            if not user_info:
+                reply = "ごめんなさい。まだ登録されていないようです。先に登録をお願いします！"
+            else:
+                name = user_info.get("name")
+                birthday = user_info.get("birthday")
+
+                # OpenAIで占い生成
+                fortune = generate_fortune(name, birthday)
+
+                # 返信文作成
+                reply = f"{name}さんの今日の運勢は…\n\n{fortune}"
+
+                # 最終占い日を更新
+                update_last_fortune_timestamp(user_id)
+
+        except Exception as e:
+            print(f"占い処理中にエラー: {e}")
+            reply = "エラーが発生しました。もう一度お試しください🙏"
+
     else:
-        reply = "メッセージを受け取りました！"
+        reply = "メッセージを受け取りました！「今日の運勢」と送ってみてください🌟"
 
+    # LINEへ返信
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply)
