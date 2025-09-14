@@ -78,13 +78,21 @@ def increment_fortune_count(user_id):
 
 # 名前と誕生日を取得（占い用）
 def get_user_profile(user_id):
-    try:
-        sheet = get_sheet()
-        records = sheet.get_all_records()
-        for row in records:
-            if row["user_id"] == user_id:
-                return row.get("name", ""), row.get("birthday", "")
-        return None, None
-    except Exception as e:
-        print(f"❌ ユーザー情報取得エラー: {e}")
-        return None, None
+    sheet = get_sheet()
+    data = sheet.get_all_values()
+    headers = data[0]
+
+    for row in data[1:]:
+        row_data = dict(zip(headers, row))
+        if row_data.get("user_id") == user_id:
+            name = row_data.get("name", "").strip()
+            birthday = row_data.get("birthday", "").strip()
+
+            if name and birthday:
+                print(f"🧾 プロフィール取得: ({name}, {birthday})")
+                return {"name": name, "birthday": birthday}
+            else:
+                print(f"⚠️ 不完全なプロフィール: name='{name}', birthday='{birthday}'")
+                return None
+    print(f"❌ 該当ユーザーが見つかりません: {user_id}")
+    return None
