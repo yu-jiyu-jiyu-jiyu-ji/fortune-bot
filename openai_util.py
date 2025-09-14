@@ -2,7 +2,7 @@ import openai
 import os
 
 # OpenAI APIキーを環境変数から取得
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = os.getenv("OPENAI_APIKEY")
 
 # 占いメッセージを生成する関数
 def generate_fortune(name, birthday):
