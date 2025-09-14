@@ -46,7 +46,7 @@ def generate_fortune(name, birthday):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo", 
             messages=[
                 {"role": "system", "content": "あなたは優しい日本語の占い師です。"},
                 {"role": "user", "content": prompt}
