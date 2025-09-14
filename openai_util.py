@@ -7,36 +7,55 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # 占いメッセージを生成する関数
 def generate_fortune(name, birthday):
     prompt = f"""
-以下は、占い師が依頼者の運勢を占う内容です。
+{name}さん（{birthday}生まれ）の、今日（2025年9月14日）の運勢を教えてください。
 
-【名前】：{name}
-【生年月日】：{birthday}
+以下の6項目について、それぞれ**日本語で80文字前後**（±5字程度）でまとめてください：
 
-この情報を元にして、今日の運勢を以下の構成で出力してください。
+- 総合運
+- 恋愛運
+- 仕事運
+- 金運
+- 健康運
+- 今日の一言アドバイス
 
----
-◆全体運（5段階で運勢評価とその根拠）
-◆恋愛運（5段階で運勢評価とアドバイス）
-◆仕事運（5段階で運勢評価とアドバイス）
-◆ラッキーアイテム
----
+出力条件：
+- 内容は前向きで具体性があるもの
+- 読みやすく自然な文体（親しみやすく肯定的）
+- 各項目の前に絵文字＋見出し（例：🔮 総合運）を付けること
+- 出力形式は **Markdown形式**
 
-ですます調で200文字以内に収めて、柔らかく肯定的な口調で返してください。
-    """
+# 出力例（フォーマット参考）
+🔮 総合運  
+〜本文80文字〜
+
+💖 恋愛運  
+〜本文80文字〜
+
+💼 仕事運  
+〜本文80文字〜
+
+💰 金運  
+〜本文80文字〜
+
+🧘‍♂️ 健康運  
+〜本文80文字〜
+
+🌟 今日の一言アドバイス  
+〜本文80文字〜
+"""
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # 必要に応じて gpt-3.5-turbo に変更可能
+            model="gpt-4",
             messages=[
-                {"role": "system", "content": "あなたは優しい占い師です。"},
+                {"role": "system", "content": "あなたは優しい日本語の占い師です。"},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.8,
-            max_tokens=300,
+            temperature=0.9,
+            max_tokens=500,
         )
         return response['choices'][0]['message']['content'].strip()
 
     except Exception as e:
         print(f"OpenAI API Error: {e}")
         return "エラーが発生しました。もう一度お試しください。"
-    
