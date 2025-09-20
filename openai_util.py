@@ -1,4 +1,4 @@
-from openai import OpenAI
+import openai
 import os
 
 # OpenAI クライアント初期化
