@@ -1,89 +1,102 @@
 import os
 import json
+import base64
+from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
 
-# 環境変数からサービスアカウント情報を取得
-service_account_info = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
-
+# -----------------------------
+# Google Sheets 接続設定
+# -----------------------------
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+# 環境変数から認証情報を読み込み（Base64 → JSON）
+b64_credentials = os.getenv("GOOGLE_CREDENTIALS_B64")
+if not b64_credentials:
+    raise RuntimeError("環境変数 GOOGLE_CREDENTIALS_B64 が設定されていません")
+
+service_account_info = json.loads(base64.b64decode(b64_credentials).decode("utf-8"))
 creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
 
 # gspread クライアントを作成
 client = gspread.authorize(creds)
 
-# 📌 スプレッドシートIDは環境変数で管理
+# スプレッドシートを取得
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 
-def get_user_row(user_id):
-    """ユーザーIDに対応する行番号を返す（見つからなければNone）"""
-    values = sheet.get_all_values()
-    for idx, row in enumerate(values[1:], start=2):  # 1行目はヘッダーなので2行目から
-        if row[0] == user_id:
-            return idx
+# -----------------------------
+# ユーザー情報取得
+# -----------------------------
+def get_user_profile(user_id):
+    try:
+        records = sheet.get_all_records()
+        for row in records:
+            if row["user_id"] == user_id:
+                name = row.get("name", "")
+                birthday = row.get("birthday", "")
+                print(f"🧾 プロフィール取得: ({name}, {birthday})")
+                return {"name": name, "birthday": birthday}
+    except Exception as e:
+        print(f"❌ プロフィール取得エラー: {e}")
     return None
 
 
-def get_user_data(user_id):
-    """ユーザーのデータを取得"""
-    row = get_user_row(user_id)
-    if row:
-        data = sheet.row_values(row)
-        # ヘッダーと突き合わせて辞書形式に変換
-        headers = sheet.row_values(1)
-        return dict(zip(headers, data))
-    return None
+# -----------------------------
+# 本日の占いが可能かチェック
+# -----------------------------
+def can_ask_fortune_today(user_id):
+    try:
+        cell = sheet.find(user_id)
+        if not cell:
+            return False
 
+        row = cell.row
+        last_date = sheet.cell(row, 8).value  # last_fortune_date
+        count_today = sheet.cell(row, 9).value  # count_today
+        limit = sheet.cell(row, 7).value       # limit
 
-def create_user(user_id, name="", birthday="", face_image="", right_hand="", left_hand="", limit=1):
-    """新規ユーザーを追加"""
-    sheet.append_row([
-        user_id, name, birthday, face_image, right_hand, left_hand,
-        str(limit), "", "0"
-    ])
+        today_str = datetime.now().strftime("%Y/%m/%d")
 
+        # 初回 or 日付が変わったらリセット
+        if last_date != today_str:
+            sheet.update_cell(row, 8, today_str)  # 更新日
+            sheet.update_cell(row, 9, 0)          # count_today = 0
+            count_today = 0
 
-def update_user(user_id, updates: dict):
-    """ユーザー情報を更新（updatesは {カラム名: 値} の辞書）"""
-    headers = sheet.row_values(1)
-    row = get_user_row(user_id)
-    if not row:
+        if count_today == "":
+            count_today = 0
+        else:
+            count_today = int(count_today)
+
+        if limit == "":
+            limit = 1
+        else:
+            limit = int(limit)
+
+        return count_today < limit
+
+    except Exception as e:
+        print(f"❌ リクエスト確認エラー: {e}")
         return False
 
-    for key, value in updates.items():
-        if key in headers:
-            col = headers.index(key) + 1
-            sheet.update_cell(row, col, value)
-    return True
 
-
-def can_receive_fortune(user_id):
-    """本日の占い利用可否を確認し、利用回数を更新"""
-    user = get_user_data(user_id)
-    if not user:
-        return False, "ユーザーが登録されていません。"
-
-    today = datetime.now().strftime("%Y-%m-%d")  # ✅ 日付は YYYY-MM-DD に統一
-    last_date = user.get("last_fortune_date", "")
-    count_today = int(user.get("count_today", "0") or 0)
-    limit = int(user.get("limit", "1") or 1)
-
-    if last_date != today:
-        # 新しい日 → カウントをリセット
-        update_user(user_id, {
-            "last_fortune_date": today,
-            "count_today": "1"
-        })
-        return True, "初回利用"
-
-    if count_today < limit:
-        # 制限内 → カウントを加算
-        update_user(user_id, {
-            "count_today": str(count_today + 1)
-        })
-        return True, "回数内利用"
-
-    return False, "本日の利用回数上限です"
+# -----------------------------
+# リクエスト回数をカウントアップ
+# -----------------------------
+def increment_fortune_count(user_id):
+    try:
+        cell = sheet.find(user_id)
+        if not cell:
+            return
+        row = cell.row
+        count_today = sheet.cell(row, 9).value
+        if count_today == "":
+            count_today = 0
+        else:
+            count_today = int(count_today)
+        sheet.update_cell(row, 9, count_today + 1)
+        print("✅ カウント更新完了")
+    except Exception as e:
+        print(f"❌ カウント更新エラー: {e}")
