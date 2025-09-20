@@ -1,8 +1,8 @@
-import openai
+from openai import OpenAI
 import os
 
-# OpenAI APIキーを環境変数から取得
-openai.api_key = os.getenv("OPENAI_APIKEY")
+# OpenAI クライアント初期化
+client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
 
 # 占いメッセージを生成する関数
 def generate_fortune(name, birthday):
@@ -23,30 +23,11 @@ def generate_fortune(name, birthday):
 - 読みやすく自然な文体（親しみやすく肯定的）
 - 各項目の前に絵文字＋見出し（例：🔮 総合運）を付けること
 - 出力形式は **Markdown形式**
-
-# 出力例（フォーマット参考）
-🔮 総合運  
-〜本文80文字〜
-
-💖 恋愛運  
-〜本文80文字〜
-
-💼 仕事運  
-〜本文80文字〜
-
-💰 金運  
-〜本文80文字〜
-
-🧘‍♂️ 健康運  
-〜本文80文字〜
-
-🌟 今日の一言アドバイス  
-〜本文80文字〜
 """
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", 
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # コスト安いモデル
             messages=[
                 {"role": "system", "content": "あなたは優しい日本語の占い師です。"},
                 {"role": "user", "content": prompt}
@@ -54,7 +35,7 @@ def generate_fortune(name, birthday):
             temperature=0.9,
             max_tokens=500,
         )
-        return response['choices'][0]['message']['content'].strip()
+        return response.choices[0].message.content.strip()
 
     except Exception as e:
         print(f"OpenAI API Error: {e}")
