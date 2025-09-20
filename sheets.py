@@ -1,101 +1,113 @@
-import base64
-import os
-import json
-from datetime import datetime
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
+from datetime import datetime, timedelta
+import os
 
-# 認証情報を取得してgspreadクライアント生成
-def get_credentials():
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    encoded = os.environ.get("GOOGLE_CREDENTIALS_B64")
-    if not encoded:
-        raise RuntimeError("GOOGLE_CREDENTIALS_B64 not set.")
-    credentials_dict = json.loads(base64.b64decode(encoded).decode())
-    return ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
+# Google認証
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SERVICE_ACCOUNT_FILE = "service_account.json"
 
-# スプレッドシートとワークシートを取得
-def get_sheet():
-    gc = gspread.authorize(get_credentials())
-    sheet_id = os.environ["SPREADSHEET_ID"]
-    worksheet = gc.open_by_key(sheet_id).sheet1
-    return worksheet
+creds = Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
+client = gspread.authorize(creds)
 
-# 初回登録時のデータ追加処理（画像は任意）
-def append_user_data(user_id, name, birthday, face_image="", right_hand="", left_hand=""):
-    try:
-        sheet = get_sheet()
-        limit = 1  # デフォルトの上限
-        last_fortune_date = ""  # 初期は空
-        count_today = 0
-        sheet.append_row([
-            user_id, name, birthday,
-            face_image or "", right_hand or "", left_hand or "",
-            limit, last_fortune_date, count_today
-        ])
-        print("✅ スプレッドシートに書き込み完了")
-    except Exception as e:
-        print(f"❌ スプレッドシート書き込み失敗: {e}")
+# 環境変数からスプレッドシートID取得
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+SHEET = client.open_by_key(SPREADSHEET_ID).sheet1
 
-# ユーザーの1日あたりリクエスト可能かをチェック
-def can_ask_fortune_today(user_id):
-    try:
-        sheet = get_sheet()
-        records = sheet.get_all_records()
-        today = datetime.now().strftime("%Y/%m/%d")
-        for i, row in enumerate(records):
-            if row["user_id"] == user_id:
-                count_today = int(row.get("count_today", 0))
-                last_date = row.get("last_fortune_date", "")
-                limit = int(row.get("limit", 1))
-                if last_date != today:
-                    return True  # 日付が変わった＝リセットOK
-                else:
-                    return count_today < limit
-        return False
-    except Exception as e:
-        print(f"❌ リクエスト確認エラー: {e}")
-        return False
 
-# 今日のリクエスト数をインクリメント or 日付更新
-def increment_fortune_count(user_id):
-    try:
-        sheet = get_sheet()
-        today = datetime.now().strftime("%Y/%m/%d")
-        cell = sheet.find(user_id)
-        row_num = cell.row
-        last_date = sheet.cell(row_num, 9).value  # last_fortune_date列
-        count_today = int(sheet.cell(row_num, 10).value or 0)
-
-        if last_date != today:
-            sheet.update_cell(row_num, 9, today)
-            sheet.update_cell(row_num, 10, 1)
-        else:
-            sheet.update_cell(row_num, 10, count_today + 1)
-        print("✅ カウント更新完了")
-    except Exception as e:
-        print(f"❌ カウント更新失敗: {e}")
-
-# 名前と誕生日を取得（占い用）
 def get_user_profile(user_id):
-    sheet = SHEET
-    records = sheet.get_all_records()
+    """ユーザー情報を取得"""
+    records = SHEET.get_all_records()
 
     for row in records:
         if row["user_id"] == user_id:
             try:
+                # limit
+                limit_val = row.get("limit", 1)
+                limit = int(limit_val) if str(limit_val).isdigit() else 1
+
+                # count_today
+                count_val = row.get("count_today", 0)
+                count_today = int(count_val) if str(count_val).isdigit() else 0
+
+                # last_fortune_date を安全に文字列化
+                last_date = row.get("last_fortune_date", "")
+                if isinstance(last_date, (int, float)):
+                    base_date = datetime(1899, 12, 30)  # Google Sheets起点
+                    last_date = (base_date + timedelta(days=int(last_date))).strftime("%Y/%m/%d")
+                elif isinstance(last_date, datetime):
+                    last_date = last_date.strftime("%Y/%m/%d")
+                else:
+                    last_date = str(last_date).strip()
+
                 return {
-                    "name": row["name"],
-                    "birthday": row["birthday"],
+                    "name": row.get("name", ""),
+                    "birthday": row.get("birthday", ""),
                     "face_image": row.get("face_image", ""),
                     "right_hand": row.get("right_hand", ""),
                     "left_hand": row.get("left_hand", ""),
-                    "limit": int(row["limit"]) if str(row["limit"]).isdigit() else 1,
-                    "last_fortune_date": row.get("last_fortune_date", ""),
-                    "count_today": int(row["count_today"]) if str(row["count_today"]).isdigit() else 0
+                    "limit": limit,
+                    "last_fortune_date": last_date,  # ←常に "YYYY/MM/DD" 文字列
+                    "count_today": count_today
                 }
             except Exception as e:
                 print(f"❌ プロフィール変換エラー: {e}, row={row}")
                 return None
     return None
 
+
+def can_ask_fortune_today(user_id):
+    """今日占えるか確認"""
+    profile = get_user_profile(user_id)
+    if not profile:
+        return False
+
+    today = datetime.now().strftime("%Y/%m/%d")
+    last_date = profile.get("last_fortune_date", "")
+    count_today = profile.get("count_today", 0)
+    limit = profile.get("limit", 1)
+
+    # 日付リセット判定
+    if last_date != today:
+        reset_fortune_count(user_id)
+
+    return count_today < limit
+
+
+def increment_fortune_count(user_id):
+    """占い利用カウントをインクリメント"""
+    try:
+        records = SHEET.get_all_records()
+        for i, row in enumerate(records, start=2):  # 2行目から
+            if row["user_id"] == user_id:
+                today = datetime.now().strftime("%Y/%m/%d")
+
+                # 現在のカウント
+                count_val = row.get("count_today", 0)
+                count_today = int(count_val) if str(count_val).isdigit() else 0
+
+                SHEET.update_cell(i, 8, today)           # last_fortune_date
+                SHEET.update_cell(i, 9, count_today + 1) # count_today
+                print("✅ カウント更新完了")
+                return True
+    except Exception as e:
+        print(f"❌ カウント更新エラー: {e}")
+    return False
+
+
+def reset_fortune_count(user_id):
+    """新しい日になったら count_today をリセット"""
+    try:
+        records = SHEET.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if row["user_id"] == user_id:
+                today = datetime.now().strftime("%Y/%m/%d")
+                SHEET.update_cell(i, 8, today)  # last_fortune_date
+                SHEET.update_cell(i, 9, 0)      # count_today
+                print("✅ カウントリセット完了")
+                return True
+    except Exception as e:
+        print(f"❌ カウントリセットエラー: {e}")
+    return False
