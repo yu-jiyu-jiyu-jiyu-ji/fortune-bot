@@ -25,6 +25,7 @@ def generate_fortune(name, birthday):
 - 出力形式は **Markdown形式**
 """
 
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # コスト安いモデル
