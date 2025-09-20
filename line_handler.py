@@ -33,30 +33,37 @@ def handle_message(event):
 
     # 今日の運勢
     elif message_text == "今日の運勢":
+        # 1日あたりのリクエスト回数をチェック
         if can_ask_fortune_today(user_id):
+            # スプレッドシートからユーザー情報を取得
             profile = get_user_profile(user_id)
             print(f"🧾 プロフィール取得: {profile}")
 
-            if profile and "name" in profile and "birthday" in profile:
-                name = profile["name"] or "あなた"
+            if profile:
+                name = profile["name"]
                 birthday = profile["birthday"]
+
                 # OpenAIで占い生成
                 fortune = generate_fortune(name, birthday)
-                increment_fortune_count(user_id)
-                reply = f"{name}さんの今日の運勢は…\n\n{fortune}"
+                print(f"🔮 占い生成結果: {fortune[:50]}...")  # 先頭50文字だけログ出力
+
+                # 占いが正常に返った場合のみカウント更新
+                if fortune and "エラーが発生しました" not in fortune:
+                    increment_fortune_count(user_id)
+                    reply = f"{name}さんの今日の運勢は…\n\n{fortune}"
+                else:
+                    reply = "占いの生成に失敗しました。時間をおいて再度お試しください🙏"
             else:
-                reply = "登録情報が不十分です。\nもう一度登録をお願いします。"
+                reply = "登録情報が見つかりませんでした。\n最初に登録をお願いします！"
         else:
             reply = "本日はすでに運勢をお届け済みです！\n明日またお試しください🌟"
 
+    # その他のメッセージ
     else:
         reply = "メッセージを受け取りました！\n「今日の運勢」と送ると、運勢をお伝えします✨"
 
     # LINEに返信
-    try:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply)
-        )
-    except Exception as e:
-        print(f"⚠️ LINE返信エラー: {e}")
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply)
+    )
