@@ -27,6 +27,28 @@ sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 
 # -----------------------------
+# ユーザー情報登録
+# -----------------------------
+def append_user_data(user_id, name, birthday, face_image="", right_hand="", left_hand="", limit=1):
+    try:
+        today_str = datetime.now().strftime("%Y/%m/%d")
+        sheet.append_row([
+            user_id,
+            name,
+            birthday,
+            face_image,
+            right_hand,
+            left_hand,
+            limit,
+            "",   # last_fortune_date（空で開始）
+            0    # count_today
+        ])
+        print(f"✅ ユーザー登録完了: {user_id}")
+    except Exception as e:
+        print(f"❌ ユーザー登録エラー: {e}")
+
+
+# -----------------------------
 # ユーザー情報取得
 # -----------------------------
 def get_user_profile(user_id):
