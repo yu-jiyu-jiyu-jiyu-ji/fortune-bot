@@ -29,7 +29,7 @@ sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 # ===============================
 def normalize_date(value):
     """スプレッドシートから取得した日付を正規化"""
-    if not value or value in ("", "1899/12/30"):  # 空 or デフォルト値
+    if not value or value in ("", "1899/12/30"):
         return None
     if isinstance(value, date):
         return value
@@ -58,6 +58,24 @@ def get_user_profile(user_id):
                 "count_today": int(row.get("count_today", 0) or 0),
             }
     return None
+
+
+# ===============================
+# ユーザー情報の追加（フォーム登録用）
+# ===============================
+def append_user_data(user_id, name, birthday, face_image="", right_hand="", left_hand="", limit=1):
+    """フォームから送信された新規ユーザーをスプレッドシートに登録"""
+    sheet.append_row([
+        user_id,
+        name,
+        birthday,
+        face_image,
+        right_hand,
+        left_hand,
+        limit,
+        "",   # last_fortune_date (未設定)
+        0     # count_today (初期値)
+    ])
 
 
 # ===============================
