@@ -1,89 +1,55 @@
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from datetime import date
-import os
+# form_handler.py
+from flask import Blueprint, request, render_template_string
+from sheets import append_user_data
 
-from sheets import get_user_profile, update_user_fortune, update_user_images
-from openai_util import generate_fortune
+form_bp = Blueprint("form", __name__)
 
-# LINE API
-line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
-handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
+# HTMLフォーム
+FORM_HTML = """
+<!doctype html>
+<html>
+  <head><title>プロフィール登録フォーム</title></head>
+  <body>
+    <h2>プロフィール登録</h2>
+    <form method="post">
+      <label>氏名（変更不可）:</label><br>
+      <input type="text" name="name" required><br><br>
+      
+      <label>生年月日（変更不可 / YYYY-MM-DD）:</label><br>
+      <input type="date" name="birthday" required><br><br>
+      
+      <label>顔写真 (任意URL):</label><br>
+      <input type="text" name="face_image"><br><br>
+      
+      <label>右手の写真 (任意URL):</label><br>
+      <input type="text" name="right_hand"><br><br>
+      
+      <label>左手の写真 (任意URL):</label><br>
+      <input type="text" name="left_hand"><br><br>
+      
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <button type="submit">登録</button>
+    </form>
+  </body>
+</html>
+"""
 
-# 登録フォームURL
-REGISTER_FORM_URL = os.getenv("REGISTER_FORM_URL", "https://example.com/form")
+# フォーム表示
+@form_bp.route("/form", methods=["GET"])
+def show_form():
+    user_id = request.args.get("user_id", "")
+    return render_template_string(FORM_HTML, user_id=user_id)
 
+# フォーム送信
+@form_bp.route("/form", methods=["POST"])
+def submit_form():
+    user_id = request.form.get("user_id")
+    name = request.form.get("name")
+    birthday = request.form.get("birthday")
+    face_image = request.form.get("face_image", "")
+    right_hand = request.form.get("right_hand", "")
+    left_hand = request.form.get("left_hand", "")
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_id = event.source.user_id
-    message_text = event.message.text.strip()
+    append_user_data(user_id, name, birthday, face_image, right_hand, left_hand)
 
-    profile = get_user_profile(user_id)
-
-    # ===============================
-    # プロフィールが未登録の場合
-    # ===============================
-    if not profile:
-        reply_text = f"まずはプロフィール登録をお願いします🙏\n{REGISTER_FORM_URL}\n\n※氏名と生年月日の変更はできません"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        return
-
-    today = date.today()
-    last_date = profile["last_fortune_date"]
-
-    # ===============================
-    # 今日の運勢
-    # ===============================
-    if message_text == "今日の運勢":
-        if last_date == today and profile["count_today"] >= profile["limit"]:
-            reply_text = "本日はすでに運勢をお届け済みです！\n明日またお試しください🌟"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
-        fortune_text = generate_fortune(profile["name"], profile["birthday"], mode="today")
-
-        if last_date == today:
-            new_count = profile["count_today"] + 1
-        else:
-            new_count = 1
-        update_user_fortune(user_id, today, new_count)
-
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=fortune_text))
-        return
-
-    # ===============================
-    # 手相占い
-    # ===============================
-    if message_text == "手相":
-        if not profile["right_hand"] and not profile["left_hand"]:
-            reply_text = f"手の写真が未登録です📷\n以下のフォームから登録してください👇\n{REGISTER_FORM_URL}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
-        fortune_text = generate_fortune(profile["name"], profile["birthday"], mode="palm",
-                                        right_hand=profile["right_hand"], left_hand=profile["left_hand"])
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=fortune_text))
-        return
-
-    # ===============================
-    # 顔相占い
-    # ===============================
-    if message_text == "顔相":
-        if not profile["face_image"]:
-            reply_text = f"顔の写真が未登録です📷\n以下のフォームから登録してください👇\n{REGISTER_FORM_URL}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
-        fortune_text = generate_fortune(profile["name"], profile["birthday"], mode="face",
-                                        face_image=profile["face_image"])
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=fortune_text))
-        return
-
-    # ===============================
-    # プロフィール編集
-    # ===============================
-    if message_text == "プロフィール":
-        reply_text = f"プロフィール編集はこちらから👇\n{REGISTER_FORM_URL}\n\n※氏名・生年月日は変更できません。"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        return
+    return "登録が完了しました。LINEに戻って『今日の運勢』と送ってください。"
