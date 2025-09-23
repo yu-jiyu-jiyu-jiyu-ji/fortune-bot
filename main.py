@@ -1,10 +1,15 @@
 from flask import Flask, request, render_template, abort
 from linebot.exceptions import InvalidSignatureError
 
-from line_handler import handler
-from form_handler import handle_form_submission  # ← 修正
+# LINE用 handler をインポート
+from line_handler import handler  
+
+# フォームは Blueprint なので handler は不要
+from form_handler import form_bp  
 
 app = Flask(__name__)
+app.register_blueprint(form_bp)  # Blueprint 登録
+
 
 # LINE Webhook受信エンドポイント
 @app.route("/callback", methods=["POST"])
