@@ -1,11 +1,9 @@
 from flask import Flask, request, render_template, abort
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage
 
 from line_handler import handler
-# from form_handler import submit_user_info
-# from form_handler import handle_form_submission 
-from form_handler import handler
+from form_handler import handle_form_submission  # ← 修正
+
 app = Flask(__name__)
 
 # LINE Webhook受信エンドポイント
@@ -22,10 +20,10 @@ def callback():
 
     return "OK"
 
+# 登録完了ページ
 @app.route("/thanks")
 def thanks():
     return render_template("thanks.html")
-    # return "登録ありがとうございました！（暫定）"
 
 # ユーザー登録フォームの表示
 @app.route("/register")
@@ -36,14 +34,13 @@ def register():
 # フォーム送信処理
 @app.route("/submit", methods=["POST"])
 def submit():
-    return handle_form_submission()  # ← 直接実行する（wrap関数を介さない）
+    return handle_form_submission()
 
-
-# ヘルスチェック用ルート
+# ヘルスチェック用
 @app.route("/")
 def index():
     return "Hello! LINE Fortune Bot is running."
 
-# 実行用
+# ローカル実行用
 if __name__ == "__main__":
     app.run(debug=True)
