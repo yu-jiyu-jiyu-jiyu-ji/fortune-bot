@@ -69,7 +69,7 @@ def handle_message(event):
             reply_text = (
                 "手の写真が未登録です📸\n"
                 "以下のフォームから登録してください👇\n"
-                "https://fortune-bot-p2ey.onrender.com?user_id=" + user_id
+                "https://fortune-bot-p2ey.onrender.com/templates?user_id=" + user_id
             )
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return

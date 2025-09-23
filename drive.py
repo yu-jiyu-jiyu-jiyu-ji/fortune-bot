@@ -1,47 +1,39 @@
-import base64, os, json
+import io
+import os
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-from google.oauth2 import service_account
-import io
-import logging
+from google.oauth2.service_account import Credentials
+import json
+import base64
 
-# Google Drive API サービスの取得
-def get_drive_service():
-    encoded = os.environ.get("GOOGLE_CREDENTIALS_B64")
-    if not encoded:
-        raise RuntimeError("GOOGLE_CREDENTIALS_B64 not set.")
-
-    credentials_dict = json.loads(base64.b64decode(encoded).decode())
-    creds = service_account.Credentials.from_service_account_info(
-        credentials_dict,
-        scopes=['https://www.googleapis.com/auth/drive']
+# 認証情報の読み込み
+if os.getenv("GOOGLE_CREDENTIALS_B64"):
+    service_account_info = json.loads(
+        base64.b64decode(os.getenv("GOOGLE_CREDENTIALS_B64")).decode("utf-8")
     )
-    return build('drive', 'v3', credentials=creds)
+else:
+    raise ValueError("環境変数 GOOGLE_CREDENTIALS_B64 が設定されていません")
 
-# フォルダ内に画像をアップロード（user_idごとにファイル名固定）
-def save_images_to_drive(user_id, image_dict):
-    drive_service = get_drive_service()
-    folder_id = os.environ.get("DRIVE_FOLDER_ID")
-    if not folder_id:
-        raise RuntimeError("DRIVE_FOLDER_ID not set.")
+SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+drive_service = build("drive", "v3", credentials=creds)
 
-    for filename, file_storage in image_dict.items():
-        if file_storage:
-            file_metadata = {
-                'name': f"{user_id}_{filename}",
-                'parents': [folder_id]
-            }
-            media = MediaIoBaseUpload(
-                io.BytesIO(file_storage.read()),
-                mimetype=file_storage.mimetype,
-                resumable=True
-            )
-            try:
-                drive_service.files().create(
-                    body=file_metadata,
-                    media_body=media,
-                    fields='id'
-                ).execute()
-                logging.info(f"Uploaded {filename} for user {user_id}")
-            except Exception as e:
-                logging.error(f"Upload failed for {filename}: {str(e)}")
+# ファイルアップロード関数
+def upload_file_to_drive(file_storage, filename):
+    file_metadata = {"name": filename}
+    media = MediaIoBaseUpload(file_storage.stream, mimetype=file_storage.mimetype)
+    uploaded_file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+
+    file_id = uploaded_file.get("id")
+
+    # 公開リンクを有効化
+    drive_service.permissions().create(
+        fileId=file_id,
+        body={"role": "reader", "type": "anyone"},
+    ).execute()
+
+    return f"https://drive.google.com/uc?id={file_id}"
