@@ -67,9 +67,8 @@ def handle_message(event):
     elif message_text == "手相":
         if not (profile.get("right_hand") or profile.get("left_hand")):
             reply_text = (
-                "手の写真が未登録です📸\n"
-                "以下のフォームから登録してください👇\n"
-                "https://fortune-bot-p2ey.onrender.com/templates?user_id=" + user_id
+                "まずはプロフィール登録をお願いします🙏\n"
+                f"https://fortune-bot-p2ey.onrender.com/register?uid={user_id}"
             )
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
