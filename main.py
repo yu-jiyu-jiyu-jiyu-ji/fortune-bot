@@ -33,7 +33,7 @@ def thanks():
 # ユーザー登録フォームの表示
 @app.route("/register")
 def register():
-    uid = request.args.get("uid", "")
+    uid = request.args.get("user_id", "")
     return render_template("register.html", user_id=uid)
 
 # フォーム送信処理
