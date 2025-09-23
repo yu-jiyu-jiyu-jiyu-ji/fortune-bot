@@ -17,7 +17,10 @@ if os.getenv("GOOGLE_CREDENTIALS_B64"):
 else:
     raise ValueError("環境変数 GOOGLE_CREDENTIALS_B64 が設定されていません")
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+]
 creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
