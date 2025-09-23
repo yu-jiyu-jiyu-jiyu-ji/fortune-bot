@@ -1,5 +1,4 @@
-# form_handler.py
-from flask import Blueprint, request, render_template_string
+from flask import Blueprint, request, render_template, render_template_string
 from sheets import append_user_data
 
 form_bp = Blueprint("form", __name__)
@@ -28,6 +27,7 @@ FORM_HTML = """
       <input type="text" name="left_hand"><br><br>
       
       <input type="hidden" name="user_id" value="{{ user_id }}">
+      <input type="hidden" name="limit" value="1">
       <button type="submit">登録</button>
     </form>
   </body>
@@ -40,16 +40,21 @@ def show_form():
     user_id = request.args.get("user_id", "")
     return render_template_string(FORM_HTML, user_id=user_id)
 
-# フォーム送信
+# フォーム送信処理
 @form_bp.route("/form", methods=["POST"])
-def submit_form():
-    user_id = request.form.get("user_id")
-    name = request.form.get("name")
-    birthday = request.form.get("birthday")
-    face_image = request.form.get("face_image", "")
-    right_hand = request.form.get("right_hand", "")
-    left_hand = request.form.get("left_hand", "")
+def handle_form_submission():
+    try:
+        user_id = request.form.get("user_id", "")
+        name = request.form.get("name", "")
+        birthday = request.form.get("birthday", "")
+        face_image = request.form.get("face_image", "")
+        right_hand = request.form.get("right_hand", "")
+        left_hand = request.form.get("left_hand", "")
+        limit = int(request.form.get("limit", 1))
 
-    append_user_data(user_id, name, birthday, face_image, right_hand, left_hand)
+        append_user_data(user_id, name, birthday, face_image, right_hand, left_hand, limit)
 
-    return "登録が完了しました。LINEに戻って『今日の運勢』と送ってください。"
+        return render_template("thanks.html")
+
+    except Exception as e:
+        return f"エラーが発生しました: {e}", 500
