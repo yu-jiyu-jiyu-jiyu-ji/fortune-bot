@@ -4,7 +4,8 @@ from linebot.models import MessageEvent, TextMessage
 
 from line_handler import handler
 # from form_handler import submit_user_info
-from form_handler import handle_form_submission 
+# from form_handler import handle_form_submission 
+from form_handler import handler
 app = Flask(__name__)
 
 # LINE Webhook受信エンドポイント
