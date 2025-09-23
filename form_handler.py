@@ -17,6 +17,10 @@ def handle_form_submission():
         user_id = request.form.get("user_id", "")
         name = request.form.get("name", "")
         birthday = request.form.get("birthday", "")
+        face_image = request.form.get("face_image", "")
+        right_hand = request.form.get("right_hand", "")
+        left_hand = request.form.get("left_hand", "")
+        limit = int(request.form.get("limit", 1))
 
         # アップロードファイルを Drive に保存（存在する場合のみ）
         face_image_url = ""
@@ -38,4 +42,6 @@ def handle_form_submission():
         return render_template("thanks.html")
 
     except Exception as e:
-        return f"エラーが発生しました: {e}", 500
+        import traceback
+        return f"エラー: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+    
