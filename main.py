@@ -4,8 +4,8 @@ from linebot.exceptions import InvalidSignatureError
 # LINE用 handler をインポート
 from line_handler import handler  
 
-# フォームは Blueprint なので handler は不要
-from form_handler import form_bp  
+from form_handler import form_bp, handle_form_submission  # ← 修正
+
 
 app = Flask(__name__)
 app.register_blueprint(form_bp)  # Blueprint 登録

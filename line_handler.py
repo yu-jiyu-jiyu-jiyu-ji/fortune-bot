@@ -16,11 +16,15 @@ handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 # ===============================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print(f"[DEBUG] handle_message triggered: {event.message.text}")  # ★ログ追加
     user_id = event.source.user_id
     message_text = event.message.text.strip()
 
     if message_text == "今日の運勢":
+        print(f"[DEBUG] 今日の運勢 requested by {user_id}")
         profile = get_user_profile(user_id)
+        print(f"[DEBUG] profile: {profile}")
+
         if not profile:
             reply_text = "まずはプロフィール登録をお願いします🙏"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
