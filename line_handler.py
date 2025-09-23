@@ -30,6 +30,34 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
+        # ===================================
+        # 他のメニュー
+        # ===================================
+        if message_text == "手相":
+            if not (profile.get("right_hand") or profile.get("left_hand")):
+                reply_text = "手の写真が未登録です📸\n以下のフォームから登録してください👇\nhttps://example.com/form?user_id=" + user_id
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                return
+
+            fortune_text = generate_fortune(profile["name"], profile["birthday"], mode="palm", images=[profile["right_hand"], profile["left_hand"]])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=fortune_text))
+            return
+
+        if message_text == "顔相":
+            if not profile.get("face_image"):
+                reply_text = "顔写真が未登録です📸\n以下のフォームから登録してください👇\nhttps://example.com/form?user_id=" + user_id
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                return
+
+            fortune_text = generate_fortune(profile["name"], profile["birthday"], mode="face", images=[profile["face_image"]])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=fortune_text))
+            return
+
+        if message_text == "プロフィール":
+            reply_text = "プロフィール登録・編集はこちら👇\nhttps://example.com/form?user_id=" + user_id
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
         today = date.today()
         last_date = profile["last_fortune_date"]
 
