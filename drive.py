@@ -21,21 +21,27 @@ creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPE
 drive_service = build("drive", "v3", credentials=creds)
 
 # 保存先フォルダ ID を環境変数で管理
-FOLDER_ID = os.getenv("1oFhe_9yzsrPSD-aqnKcRcvWKvfUkFcRS")
+FOLDER_ID = os.getenv("DRIVE_UPLOAD_FOLDER_ID", "")
 
 def upload_file_to_drive(file_storage, filename):
-    file_metadata = {
-        "name": filename,
-        "parents": [FOLDER_ID] if FOLDER_ID else []
-    }
-    media = MediaIoBaseUpload(
-        io.BytesIO(file_storage.read()),  # Flask FileStorage → BytesIO
-        mimetype=file_storage.mimetype,
-        resumable=True
-    )
-    file = drive_service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id, webViewLink"
-    ).execute()
-    return file.get("webViewLink")
+    try:
+        file_metadata = {
+            "name": filename,
+            "parents": [FOLDER_ID] if FOLDER_ID else []
+        }
+        media = MediaIoBaseUpload(
+            io.BytesIO(file_storage.read()),  # Flask FileStorage → BytesIO
+            mimetype=file_storage.mimetype,
+            resumable=True
+        )
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, webViewLink"
+        ).execute()
+        return file.get("webViewLink")
+
+    except Exception as e:
+        import traceback
+        print("[Drive Upload Error]", traceback.format_exc())
+        raise
