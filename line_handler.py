@@ -24,8 +24,12 @@ def handle_message(event):
     profile = get_user_profile(user_id)
     print(f"[DEBUG] profile: {profile}")
 
-    if not profile:
-        reply_text = "まずはプロフィール登録をお願いします🙏\nhttps://fortune-bot-p2ey.onrender.com/register?user_id=" + user_id
+    # if not profile:
+    #     reply_text = "まずはプロフィール登録をお願いします🙏\nhttps://fortune-bot-p2ey.onrender.com/register?user_id=" + user_id
+    #     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+    #     return
+    if message_text == "プロフィール":
+        reply_text = f"プロフィール登録・編集はこちら👇\nhttps://fortune-bot-p2ey.onrender.com/register?user_id={user_id}"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         return
 
