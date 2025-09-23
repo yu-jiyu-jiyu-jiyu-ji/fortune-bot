@@ -25,7 +25,7 @@ def handle_message(event):
     print(f"[DEBUG] profile: {profile}")
 
     if not profile:
-        reply_text = "まずはプロフィール登録をお願いします🙏\nhttps://example.com/form?user_id=" + user_id
+        reply_text = "まずはプロフィール登録をお願いします🙏\nhttps://fortune-bot-p2ey.onrender.com?user_id=" + user_id
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         return
 
@@ -69,7 +69,7 @@ def handle_message(event):
             reply_text = (
                 "手の写真が未登録です📸\n"
                 "以下のフォームから登録してください👇\n"
-                "https://example.com/form?user_id=" + user_id
+                "https://fortune-bot-p2ey.onrender.com?user_id=" + user_id
             )
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
@@ -91,7 +91,7 @@ def handle_message(event):
             reply_text = (
                 "顔写真が未登録です📸\n"
                 "以下のフォームから登録してください👇\n"
-                "https://example.com/form?user_id=" + user_id
+                "https://fortune-bot-p2ey.onrender.com?user_id=" + user_id
             )
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
@@ -109,7 +109,7 @@ def handle_message(event):
     # プロフィール編集
     # ===============================
     elif message_text == "プロフィール":
-        reply_text = "プロフィール登録・編集はこちら👇\nhttps://example.com/form?user_id=" + user_id
+        reply_text = "プロフィール登録・編集はこちら👇\nhttps://fortune-bot-p2ey.onrender.com?user_id=" + user_id
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         return
 
