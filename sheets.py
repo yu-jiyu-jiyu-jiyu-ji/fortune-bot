@@ -10,7 +10,6 @@ from datetime import datetime, date
 # ===============================
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
-# Render 環境変数から service account 情報を取得
 if os.getenv("GOOGLE_CREDENTIALS_B64"):
     service_account_info = json.loads(
         base64.b64decode(os.getenv("GOOGLE_CREDENTIALS_B64")).decode("utf-8")
@@ -25,10 +24,9 @@ sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 
 # ===============================
-# 日付正規化関数
+# 日付正規化
 # ===============================
 def normalize_date(value):
-    """スプレッドシートから取得した日付を正規化"""
     if not value or value in ("", "1899/12/30"):
         return None
     if isinstance(value, date):
@@ -40,7 +38,7 @@ def normalize_date(value):
 
 
 # ===============================
-# ユーザー情報の取得
+# プロフィール取得
 # ===============================
 def get_user_profile(user_id):
     records = sheet.get_all_records()
@@ -61,10 +59,9 @@ def get_user_profile(user_id):
 
 
 # ===============================
-# ユーザー情報の追加（フォーム登録用）
+# 新規ユーザー登録
 # ===============================
-def append_user_data(user_id, name, birthday, face_image="", right_hand="", left_hand="", limit=1):
-    """フォームから送信された新規ユーザーをスプレッドシートに登録"""
+def append_user_data(user_id, name, birthday, face_image="", right_hand="", left_hand="", limit=2):
     sheet.append_row([
         user_id,
         name,
@@ -73,13 +70,13 @@ def append_user_data(user_id, name, birthday, face_image="", right_hand="", left
         right_hand,
         left_hand,
         limit,
-        "",   # last_fortune_date (未設定)
-        0     # count_today (初期値)
+        "",   # last_fortune_date
+        0     # count_today
     ])
 
 
 # ===============================
-# ユーザー情報の更新
+# 占い利用回数更新
 # ===============================
 def update_user_fortune(user_id, last_fortune_date, count_today):
     records = sheet.get_all_records()
@@ -87,5 +84,22 @@ def update_user_fortune(user_id, last_fortune_date, count_today):
         if row["user_id"] == user_id:
             sheet.update_cell(i, 8, last_fortune_date.strftime("%Y/%m/%d"))
             sheet.update_cell(i, 9, count_today)
+            return True
+    return False
+
+
+# ===============================
+# プロフィール更新（画像のみ）
+# ===============================
+def update_user_images(user_id, face_image="", right_hand="", left_hand=""):
+    records = sheet.get_all_records()
+    for i, row in enumerate(records, start=2):
+        if row["user_id"] == user_id:
+            if face_image:
+                sheet.update_cell(i, 4, face_image)
+            if right_hand:
+                sheet.update_cell(i, 5, right_hand)
+            if left_hand:
+                sheet.update_cell(i, 6, left_hand)
             return True
     return False

@@ -1,16 +1,22 @@
-import openai
 import os
+import openai
 
-# APIキーを環境変数から読み込む
 openai.api_key = os.getenv("OPENAI_APIKEY")
 
-# 占いメッセージを生成する関数
-def generate_fortune(name, birthday):
-    prompt = f"""
-{name}さん（{birthday}生まれ）の、今日（2025年9月14日）の運勢を教えてください。
 
-以下の6項目について、それぞれ**日本語で80文字前後**（±5字程度）でまとめてください：
+def generate_fortune(name, birthday, mode="today", face_image="", right_hand="", left_hand=""):
+    """
+    mode に応じてプロンプトを切り替える
+    - "today" : 今日の運勢
+    - "palm"  : 手相
+    - "face"  : 顔相
+    """
 
+    if mode == "today":
+        prompt = f"""
+{name}さん（{birthday}生まれ）の、今日の運勢を教えてください。
+
+以下の6項目を80文字前後でまとめてください：
 - 総合運
 - 恋愛運
 - 仕事運
@@ -18,23 +24,51 @@ def generate_fortune(name, birthday):
 - 健康運
 - 今日の一言アドバイス
 
-出力条件：
-- 内容は前向きで具体性があるもの
-- 読みやすく自然な文体（親しみやすく肯定的）
-- 各項目の前に絵文字＋見出しを付けること
-- 出力形式は **Markdown形式**
+条件：
+- 前向きで具体的
+- 親しみやすい文体
+- 各項目に絵文字＋見出し
+- 出力はMarkdown形式
 """
+
+    elif mode == "palm":
+        prompt = f"""
+{name}さんの手相占いをしてください。
+右手: {right_hand or "未提供"}
+左手: {left_hand or "未提供"}
+
+以下の4項目を80文字前後でまとめてください：
+- 性格や強み
+- 仕事運の特徴
+- 恋愛傾向
+- 今日のアドバイス
+"""
+
+    elif mode == "face":
+        prompt = f"""
+{name}さんの顔相占いをしてください。
+顔画像: {face_image or "未提供"}
+
+以下の3項目を80文字前後でまとめてください：
+- 性格や印象
+- 今後の運勢
+- 今日のアドバイス
+"""
+
+    else:
+        prompt = f"{name}さんの運勢を占ってください。"
+
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",   # <= gpt-3.5 を使用
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "あなたは優しい日本語の占い師です。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.9,
-            max_tokens=500,
+            max_tokens=700,
         )
-        return response["choices"][0]["message"]["content"].strip()
+        return res["choices"][0]["message"]["content"].strip()
     except Exception as e:
         print(f"OpenAI API Error: {e}")
         return "エラーが発生しました。もう一度お試しください。"
